@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Hasil Diagnosa</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="container" id="hasil-diagnosa">
+    {% if error %}
+      <a href="{{ url_for('index') }}" class="btn-kecil">🔙 Kembali</a>
+      <h2 class="error">⚠️ {{ error }}</h2>
+    {% else %}
+      <a href="{{ url_for('index') }}" class="btn-kecil">🔙 Kembali</a>
+      <h1>🩺 Hasil Prediksi Penyakit Berdasarkan Gejala Anda</h1>
+      <div class="hasil" id="konten-diagnosa">
+        <div class="judul-hasil">
+          Hasil Diagnosis Penyakit
+        </div>
+
+        <div class="hasil-item"><div class="label">Nama:</div><div class="value" id="nama-pasien">{{ result.nama }}</div></div>
+        <div class="hasil-item"><div class="label">Tanggal Lahir:</div><div class="value">{{ result.lahir }}</div></div>
+        <div class="hasil-item"><div class="label">Alamat:</div><div class="value">{{ result.alamat }}</div></div>
+        <div class="hasil-item"><div class="label">No Telepon:</div><div class="value">{{ result.telepon }}</div></div>
+        <div class="hasil-item"><div class="label">Tanggal & Waktu:</div><div class="value">{{ result.tanggal }} - {{ result.waktu }}</div></div>
+
+        <hr class="pembatas" />
+
+        <div class="hasil-item"><div class="label">Penyakit:</div><div class="value">{{ result.penyakit }}</div></div>
+        <div class="hasil-item"><div class="label">Deskripsi:</div><div class="value">{{ result.deskripsi }}</div></div>
+        <div class="hasil-item"><div class="label">Tingkat Keparahan:</div><div class="value">{{ result.keparahan }}</div></div>
+        <div class="hasil-item"><div class="label">Pengobatan Awal:</div><div class="value">{{ result.pengobatan }}</div></div>
+        <div class="hasil-item"><div class="label">Obat yang Disarankan:</div><div class="value">{{ result.obat }}</div></div>
+        <div class="hasil-item"><div class="label">Gejala yang Dipilih:</div></div>
+        <ul class="gejala-list">
+          {% for g in result.gejala %}
+            <li>{{ g }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <button class="btn-download" onclick="unduhPDF()">⬇️ Download Hasil Diagnosa (PDF)</button>
+    {% endif %}
+  </div>
+
+  <script>
+    async function unduhPDF() {
+      const { jsPDF } = window.jspdf;
+      const element = document.getElementById("konten-diagnosa");
+
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      const kop = new Image();
+      kop.src = "{{ url_for('static', filename='img/kop.png') }}";
+      kop.onload = function () {
+        pdf.addImage(kop, 'PNG', 10, 10, pdfWidth - 20, 30);
+        pdf.addImage(imgData, 'PNG', 10, 50, pdfWidth - 20, pdfHeight);
+
+        const nama = document.getElementById("nama-pasien").innerText || "pasien";
+        pdf.save(`hasil_diagnosa(${nama}).pdf`);
+      };
+    }
+  </script>
+</body>
+</html>
